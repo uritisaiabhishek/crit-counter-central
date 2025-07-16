@@ -2,6 +2,7 @@ export interface Pokemon {
   id: number;
   name: string;
   types: string[];
+  region: string;
   sprite: string;
   moves: {
     fast: string[];
@@ -14,6 +15,7 @@ export const pokemonDatabase: Pokemon[] = [
     id: 25,
     name: "Pikachu",
     types: ["Electric"],
+    region: "Kanto",
     sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png",
     moves: {
       fast: ["Thunder Shock", "Quick Attack"],
@@ -24,6 +26,7 @@ export const pokemonDatabase: Pokemon[] = [
     id: 6,
     name: "Charizard",
     types: ["Fire", "Flying"],
+    region: "Kanto",
     sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/6.png",
     moves: {
       fast: ["Fire Fang", "Air Slash"],
@@ -34,6 +37,7 @@ export const pokemonDatabase: Pokemon[] = [
     id: 9,
     name: "Blastoise",
     types: ["Water"],
+    region: "Kanto",
     sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/9.png",
     moves: {
       fast: ["Water Gun", "Bite"],
@@ -44,6 +48,7 @@ export const pokemonDatabase: Pokemon[] = [
     id: 3,
     name: "Venusaur",
     types: ["Grass", "Poison"],
+    region: "Kanto",
     sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/3.png",
     moves: {
       fast: ["Vine Whip", "Razor Leaf"],
@@ -54,6 +59,7 @@ export const pokemonDatabase: Pokemon[] = [
     id: 144,
     name: "Articuno",
     types: ["Ice", "Flying"],
+    region: "Kanto",
     sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/144.png",
     moves: {
       fast: ["Frost Breath", "Ice Shard"],
@@ -64,6 +70,7 @@ export const pokemonDatabase: Pokemon[] = [
     id: 145,
     name: "Zapdos",
     types: ["Electric", "Flying"],
+    region: "Kanto",
     sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/145.png",
     moves: {
       fast: ["Thunder Shock", "Charge Beam"],
@@ -74,6 +81,7 @@ export const pokemonDatabase: Pokemon[] = [
     id: 146,
     name: "Moltres",
     types: ["Fire", "Flying"],
+    region: "Kanto",
     sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/146.png",
     moves: {
       fast: ["Fire Spin", "Wing Attack"],
@@ -84,6 +92,7 @@ export const pokemonDatabase: Pokemon[] = [
     id: 143,
     name: "Snorlax",
     types: ["Normal"],
+    region: "Kanto",
     sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/143.png",
     moves: {
       fast: ["Lick", "Zen Headbutt"],
@@ -94,6 +103,7 @@ export const pokemonDatabase: Pokemon[] = [
     id: 150,
     name: "Mewtwo",
     types: ["Psychic"],
+    region: "Kanto",
     sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/150.png",
     moves: {
       fast: ["Psycho Cut", "Confusion"],
@@ -104,6 +114,7 @@ export const pokemonDatabase: Pokemon[] = [
     id: 94,
     name: "Gengar",
     types: ["Ghost", "Poison"],
+    region: "Kanto",
     sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/94.png",
     moves: {
       fast: ["Shadow Claw", "Hex"],
@@ -114,6 +125,7 @@ export const pokemonDatabase: Pokemon[] = [
     id: 131,
     name: "Lapras",
     types: ["Water", "Ice"],
+    region: "Kanto",
     sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/131.png",
     moves: {
       fast: ["Water Gun", "Ice Shard"],
@@ -124,13 +136,160 @@ export const pokemonDatabase: Pokemon[] = [
     id: 68,
     name: "Machamp",
     types: ["Fighting"],
+    region: "Kanto",
     sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/68.png",
     moves: {
       fast: ["Counter", "Bullet Punch"],
       charged: ["Dynamic Punch", "Cross Chop", "Heavy Slam"]
     }
+  },
+  // Adding some Johto Pokemon
+  {
+    id: 157,
+    name: "Typhlosion",
+    types: ["Fire"],
+    region: "Johto",
+    sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/157.png",
+    moves: {
+      fast: ["Ember", "Shadow Claw"],
+      charged: ["Fire Blast", "Solar Beam", "Thunder Punch"]
+    }
+  },
+  {
+    id: 160,
+    name: "Feraligatr",
+    types: ["Water"],
+    region: "Johto",
+    sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/160.png",
+    moves: {
+      fast: ["Water Gun", "Bite"],
+      charged: ["Hydro Pump", "Crunch", "Ice Beam"]
+    }
+  },
+  {
+    id: 154,
+    name: "Meganium",
+    types: ["Grass"],
+    region: "Johto",
+    sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/154.png",
+    moves: {
+      fast: ["Vine Whip", "Razor Leaf"],
+      charged: ["Solar Beam", "Petal Blizzard", "Earthquake"]
+    }
+  },
+  // Adding some Hoenn Pokemon
+  {
+    id: 257,
+    name: "Blaziken",
+    types: ["Fire", "Fighting"],
+    region: "Hoenn",
+    sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/257.png",
+    moves: {
+      fast: ["Counter", "Fire Spin"],
+      charged: ["Overheat", "Focus Blast", "Brave Bird"]
+    }
+  },
+  {
+    id: 260,
+    name: "Swampert",
+    types: ["Water", "Ground"],
+    region: "Hoenn",
+    sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/260.png",
+    moves: {
+      fast: ["Water Gun", "Mud Shot"],
+      charged: ["Hydro Cannon", "Earthquake", "Sludge Wave"]
+    }
+  },
+  {
+    id: 254,
+    name: "Sceptile",
+    types: ["Grass"],
+    region: "Hoenn",
+    sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/254.png",
+    moves: {
+      fast: ["Bullet Seed", "Fury Cutter"],
+      charged: ["Leaf Blade", "Aerial Ace", "Earthquake"]
+    }
+  },
+  // Adding some Sinnoh Pokemon
+  {
+    id: 392,
+    name: "Infernape",
+    types: ["Fire", "Fighting"],
+    region: "Sinnoh",
+    sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/392.png",
+    moves: {
+      fast: ["Fire Spin", "Rock Smash"],
+      charged: ["Blast Burn", "Close Combat", "Thunder Punch"]
+    }
+  },
+  {
+    id: 395,
+    name: "Empoleon",
+    types: ["Water", "Steel"],
+    region: "Sinnoh",
+    sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/395.png",
+    moves: {
+      fast: ["Waterfall", "Metal Claw"],
+      charged: ["Hydro Cannon", "Flash Cannon", "Blizzard"]
+    }
+  },
+  {
+    id: 389,
+    name: "Torterra",
+    types: ["Grass", "Ground"],
+    region: "Sinnoh",
+    sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/389.png",
+    moves: {
+      fast: ["Razor Leaf", "Bite"],
+      charged: ["Frenzy Plant", "Earthquake", "Stone Edge"]
+    }
   }
 ];
+
+// Enhanced search function
+export function searchPokemon(query: string): { pokemon: Pokemon; matchType: string }[] {
+  if (!query.trim()) return [];
+
+  const searchTerm = query.toLowerCase().trim();
+  const results: { pokemon: Pokemon; matchType: string }[] = [];
+
+  pokemonDatabase.forEach(pokemon => {
+    // Search by name (exact match gets priority)
+    if (pokemon.name.toLowerCase() === searchTerm) {
+      results.unshift({ pokemon, matchType: 'name' });
+      return;
+    }
+    
+    // Search by name (partial match)
+    if (pokemon.name.toLowerCase().includes(searchTerm)) {
+      results.push({ pokemon, matchType: 'name' });
+      return;
+    }
+    
+    // Search by type
+    const typeMatch = pokemon.types.some(type => 
+      type.toLowerCase().includes(searchTerm)
+    );
+    if (typeMatch) {
+      results.push({ pokemon, matchType: 'type' });
+      return;
+    }
+    
+    // Search by region
+    if (pokemon.region.toLowerCase().includes(searchTerm)) {
+      results.push({ pokemon, matchType: 'region' });
+      return;
+    }
+  });
+
+  // Remove duplicates and limit results
+  const uniqueResults = results.filter((result, index, self) => 
+    index === self.findIndex(r => r.pokemon.id === result.pokemon.id)
+  );
+
+  return uniqueResults.slice(0, 8);
+}
 
 // Type effectiveness chart (simplified)
 export const typeEffectiveness: Record<string, { strong: string[], weak: string[] }> = {
