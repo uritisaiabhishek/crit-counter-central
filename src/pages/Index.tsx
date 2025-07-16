@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Settings } from "lucide-react";
 import GameSelectionModal from "@/components/GameSelectionModal";
 import TeraTypeSelector from "@/components/TeraTypeSelector";
 import PokemonCard from "@/components/PokemonCard";
-import { pokemonDatabase, getCounters, getWeakTo, type Pokemon } from "@/data/pokemon";
+import PokemonSearchDropdown from "@/components/PokemonSearchDropdown";
+import { getCounters, getWeakTo, type Pokemon } from "@/data/pokemon";
 import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
@@ -54,21 +54,16 @@ const Index = () => {
     setSelectedTeraType(null);
   };
 
-  const handleSearch = (query: string) => {
+  const handlePokemonSelect = (pokemon: Pokemon) => {
+    setSelectedPokemon(pokemon);
+    setSelectedTeraType(null);
+  };
+
+  const handleSearchQueryChange = (query: string) => {
     setSearchQuery(query);
     
-    if (query.trim()) {
-      const pokemon = pokemonDatabase.find(p => 
-        p.name.toLowerCase().includes(query.toLowerCase())
-      );
-      
-      if (pokemon) {
-        setSelectedPokemon(pokemon);
-        setSelectedTeraType(null);
-      } else {
-        setSelectedPokemon(null);
-      }
-    } else {
+    // If query is cleared, reset selected pokemon
+    if (!query.trim()) {
       setSelectedPokemon(null);
     }
   };
@@ -125,18 +120,13 @@ const Index = () => {
             </div>
             
             <div className="w-full max-w-lg">
-              <Input
-                placeholder="Search for a Pokémon..."
+              <PokemonSearchDropdown
                 value={searchQuery}
-                onChange={(e) => handleSearch(e.target.value)}
-                className="text-lg py-6 text-center"
+                onSelect={handlePokemonSelect}
+                onQueryChange={handleSearchQueryChange}
+                placeholder="Search for a Pokémon..."
+                className="text-lg py-6"
               />
-              
-              {searchQuery && !selectedPokemon && (
-                <p className="text-center text-muted-foreground mt-2">
-                  No Pokémon found. Try "Pikachu", "Charizard", or "Mewtwo"
-                </p>
-              )}
             </div>
           </div>
         ) : (
@@ -144,10 +134,11 @@ const Index = () => {
             {/* Selected Pokémon Info */}
             <div className="text-center space-y-6">
               <div className="flex flex-col items-center gap-4">
-                <Input
-                  placeholder="Search for a Pokémon..."
+                <PokemonSearchDropdown
                   value={searchQuery}
-                  onChange={(e) => handleSearch(e.target.value)}
+                  onSelect={handlePokemonSelect}
+                  onQueryChange={handleSearchQueryChange}
+                  placeholder="Search for a Pokémon..."
                   className="max-w-lg"
                 />
                 
