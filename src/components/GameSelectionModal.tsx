@@ -42,7 +42,7 @@ export default function GameSelectionModal({ isOpen, onGameSelect, onClose }: Ga
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={() => onClose?.()}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl">
         <DialogHeader>
           <DialogTitle className="text-2xl text-center">Choose Your Pokémon Game</DialogTitle>
