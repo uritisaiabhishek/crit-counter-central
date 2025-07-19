@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 interface GameSelectionModalProps {
   isOpen: boolean;
   onGameSelect: (game: string) => void;
+  onClose?: () => void;
 }
 
 const games = [
@@ -29,7 +30,7 @@ const games = [
   }
 ];
 
-export default function GameSelectionModal({ isOpen, onGameSelect }: GameSelectionModalProps) {
+export default function GameSelectionModal({ isOpen, onGameSelect, onClose }: GameSelectionModalProps) {
   const [selectedGame, setSelectedGame] = useState<string | null>(null);
 
   const handleConfirm = () => {
@@ -39,7 +40,7 @@ export default function GameSelectionModal({ isOpen, onGameSelect }: GameSelecti
   };
 
   return (
-    <Dialog open={isOpen}>
+    <Dialog open={isOpen} onOpenChange={() => onClose?.()}>
       <DialogContent className="max-w-4xl">
         <DialogHeader>
           <DialogTitle className="text-2xl text-center">Choose Your Pokémon Game</DialogTitle>

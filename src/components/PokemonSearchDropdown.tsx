@@ -110,7 +110,6 @@ export default function PokemonSearchDropdown({
 
   const handleSelect = (pokemon: Pokemon) => {
     onSelect(pokemon);
-    onQueryChange(pokemon.name);
     setIsOpen(false);
     setHighlightedIndex(-1);
   };
