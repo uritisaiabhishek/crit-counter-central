@@ -1,19 +1,16 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
-interface Pokemon {
+interface PokemonAPI {
   id: number;
   name: string;
-  types: string[];
+  types: { type: { name: string } }[];
   sprite: string;
-  moves: {
-    fast: string[];
-    charged: string[];
-  };
+  moves: { move: { name: string } }[];
 }
 
 interface PokemonCardProps {
-  pokemon: Pokemon;
+  pokemon: PokemonAPI;
   effectiveness?: "counter" | "weak";
 }
 
@@ -57,12 +54,12 @@ export default function PokemonCard({ pokemon, effectiveness }: PokemonCardProps
           <div className="flex-1">
             <CardTitle className="text-lg">{pokemon.name}</CardTitle>
             <div className="flex gap-1 mt-1">
-              {pokemon.types.map((type) => (
+              {pokemon.types.map((typeObj) => (
                 <Badge
-                  key={type}
-                  className={`${typeColors[type.toLowerCase()]} text-white text-xs`}
+                  key={typeObj.type.name}
+                  className={`${typeColors[typeObj.type.name.toLowerCase()]} text-white text-xs`}
                 >
-                  {type}
+                  {typeObj.type.name.charAt(0).toUpperCase() + typeObj.type.name.slice(1)}
                 </Badge>
               ))}
             </div>
@@ -73,22 +70,11 @@ export default function PokemonCard({ pokemon, effectiveness }: PokemonCardProps
       <CardContent className="pt-0">
         <div className="space-y-3">
           <div>
-            <h4 className="font-semibold text-sm mb-1">Fast Moves</h4>
+            <h4 className="font-semibold text-sm mb-1">Sample Moves</h4>
             <div className="flex flex-wrap gap-1">
-              {pokemon.moves.fast.map((move, index) => (
+              {pokemon.moves.slice(0, 4).map((moveObj, index) => (
                 <Badge key={index} variant="outline" className="text-xs">
-                  {move}
-                </Badge>
-              ))}
-            </div>
-          </div>
-          
-          <div>
-            <h4 className="font-semibold text-sm mb-1">Charged Moves</h4>
-            <div className="flex flex-wrap gap-1">
-              {pokemon.moves.charged.map((move, index) => (
-                <Badge key={index} variant="secondary" className="text-xs">
-                  {move}
+                  {moveObj.move.name.charAt(0).toUpperCase() + moveObj.move.name.slice(1)}
                 </Badge>
               ))}
             </div>

@@ -5,17 +5,53 @@ import GameSelectionModal from "@/components/GameSelectionModal";
 import TeraTypeSelector from "@/components/TeraTypeSelector";
 import PokemonCard from "@/components/PokemonCard";
 import PokemonSearchDropdown from "@/components/PokemonSearchDropdown";
-import { getCounters, getWeakTo, type Pokemon } from "@/data/pokemon";
 import { useToast } from "@/hooks/use-toast";
+
+type PokemonAPI = {
+  id: number;
+  name: string;
+  sprites: { front_default: string };
+  types: { type: { name: string } }[];
+};
+
+const pokemonGames = [
+  { id: "scarlet-violet", name: "Scarlet / Violet" },
+  { id: "diamond-pearl", name: "Diamond / Pearl" },
+  { id: "lets-go", name: "Let's Go Eevee / Pikachu" },
+  { id: "firered-leafgreen", name: "FireRed / LeafGreen" },
+  { id: "ruby-sapphire", name: "Ruby / Sapphire" },
+  { id: "emerald", name: "Emerald" },
+  { id: "red-blue", name: "Red / Blue" },
+  { id: "yellow", name: "Yellow" },
+  { id: "gold-silver", name: "Gold / Silver" },
+  { id: "crystal", name: "Crystal" },
+  { id: "black-white", name: "Black / White" },
+  { id: "black2-white2", name: "Black 2 / White 2" },
+  { id: "x-y", name: "X / Y" },
+  { id: "omega-ruby-alpha-sapphire", name: "Omega Ruby / Alpha Sapphire" },
+  { id: "sun-moon", name: "Sun / Moon" },
+  { id: "ultra-sun-ultra-moon", name: "Ultra Sun / Ultra Moon" },
+  { id: "sword-shield", name: "Sword / Shield" },
+  { id: "pokemon-go", name: "Pokémon GO" },
+  { id: "legends-arceus", name: "Legends: Arceus" },
+  { id: "colosseum", name: "Colosseum" },
+  { id: "xd-gale-of-darkness", name: "XD: Gale of Darkness" },
+  { id: "snap", name: "Pokémon Snap" },
+  { id: "stadium", name: "Pokémon Stadium" },
+  { id: "mystery-dungeon", name: "Mystery Dungeon" },
+  { id: "ranger", name: "Pokémon Ranger" },
+  { id: "conquest", name: "Pokémon Conquest" },
+  { id: "battle-revolution", name: "Battle Revolution" },
+];
 
 const Index = () => {
   const [selectedGame, setSelectedGame] = useState<string | null>(null);
   const [showGameModal, setShowGameModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | null>(null);
+  const [selectedPokemon, setSelectedPokemon] = useState<PokemonAPI | null>(null);
   const [selectedTeraType, setSelectedTeraType] = useState<string | null>(null);
-  const [counters, setCounters] = useState<Pokemon[]>([]);
-  const [weakTo, setWeakTo] = useState<Pokemon[]>([]);
+  const [counters, setCounters] = useState<PokemonAPI[]>([]);
+  const [weakTo, setWeakTo] = useState<PokemonAPI[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -27,13 +63,67 @@ const Index = () => {
     }
   }, []);
 
-  useEffect(() => {
-    if (selectedPokemon) {
-      const counterList = getCounters(selectedPokemon, selectedTeraType || undefined);
-      const weakList = getWeakTo(selectedPokemon, selectedTeraType || undefined);
-      setCounters(counterList);
-      setWeakTo(weakList);
+  // Fetch Pokémon data from PokéAPI
+  const fetchPokemon = async (name: string) => {
+    try {
+      const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${name.toLowerCase()}`);
+      if (!res.ok) throw new Error("Pokémon not found");
+      const data: PokemonAPI = await res.json();
+      return {
+        id: data.id,
+        name: data.name.charAt(0).toUpperCase() + data.name.slice(1),
+        sprite: data.sprites.front_default,
+        types: data.types.map(t => t.type.name.charAt(0).toUpperCase() + t.type.name.slice(1)),
+      };
+    } catch {
+      return null;
     }
+  };
+
+  // Fetch type effectiveness from PokéAPI
+  const fetchTypeEffectiveness = async (types: string[]) => {
+    // Get all type relations
+    const promises = types.map(type =>
+      fetch(`https://pokeapi.co/api/v2/type/${type.toLowerCase()}`).then(res => res.json())
+    );
+    const typeData = await Promise.all(promises);
+
+    // Aggregate damage relations
+    const doubleDamageFrom = new Set<string>();
+    const doubleDamageTo = new Set<string>();
+    typeData.forEach(td => {
+      td.damage_relations.double_damage_from.forEach((t: any) => doubleDamageFrom.add(t.name));
+      td.damage_relations.double_damage_to.forEach((t: any) => doubleDamageTo.add(t.name));
+    });
+
+    return { doubleDamageFrom, doubleDamageTo };
+  };
+
+  useEffect(() => {
+    const getMatchups = async () => {
+      if (!selectedPokemon) return;
+      const types = selectedTeraType ? [selectedTeraType] : selectedPokemon.types;
+      const { doubleDamageFrom, doubleDamageTo } = await fetchTypeEffectiveness(types);
+
+      // For demo: get first 20 Pokémon and filter by type
+      const res = await fetch("https://pokeapi.co/api/v2/pokemon?limit=20");
+      const list = await res.json();
+      const pokemons: PokemonAPI[] = await Promise.all(
+        list.results.map((p: any) => fetchPokemon(p.name))
+      );
+
+      setCounters(
+        pokemons.filter(p =>
+          p?.types.some(t => doubleDamageFrom.has(t.toLowerCase()))
+        )
+      );
+      setWeakTo(
+        pokemons.filter(p =>
+          p?.types.some(t => doubleDamageTo.has(t.toLowerCase()))
+        )
+      );
+    };
+    getMatchups();
   }, [selectedPokemon, selectedTeraType]);
 
   const handleGameSelect = (game: string) => {
@@ -54,27 +144,22 @@ const Index = () => {
     setSelectedTeraType(null);
   };
 
-  const handlePokemonSelect = (pokemon: Pokemon) => {
-    setSelectedPokemon(pokemon);
+  const handlePokemonSelect = async (pokemon: { name: string }) => {
+    const poke = await fetchPokemon(pokemon.name);
+    setSelectedPokemon(poke);
     setSelectedTeraType(null);
   };
 
   const handleSearchQueryChange = (query: string) => {
     setSearchQuery(query);
-    
-    // If query is cleared, reset selected pokemon
     if (!query.trim()) {
       setSelectedPokemon(null);
     }
   };
 
   const getGameDisplayName = (gameId: string) => {
-    switch (gameId) {
-      case "scarlet-violet": return "Scarlet / Violet";
-      case "diamond-pearl": return "Diamond / Pearl";
-      case "lets-go": return "Let's Go Eevee / Pikachu";
-      default: return gameId;
-    }
+    const game = pokemonGames.find(g => g.id === gameId);
+    return game ? game.name : gameId.replace(/-/g, " ").replace(/\b\w/g, l => l.toUpperCase());
   };
 
   return (
