@@ -1,12 +1,12 @@
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { searchPokemon, type Pokemon } from "@/data/pokemon";
+import { searchPokemonByName, PokemonDetails, PokemonSearchResult } from "@/services/pokeapi";
 
 interface PokemonSearchDropdownProps {
   value: string;
-  onSelect: (pokemon: Pokemon) => void;
+  onSelect: (pokemon: PokemonDetails) => void;
   onQueryChange: (query: string) => void;
   placeholder?: string;
   className?: string;
@@ -33,39 +33,44 @@ const typeColors: Record<string, string> = {
   fairy: "bg-pink-300"
 };
 
-export default function PokemonSearchDropdown({ 
-  value, 
-  onSelect, 
-  onQueryChange, 
+const PokemonSearchDropdown: React.FC<PokemonSearchDropdownProps> = ({
+  value,
+  onSelect,
+  onQueryChange,
   placeholder = "Search for a Pokémon...",
-  className = ""
-}: PokemonSearchDropdownProps) {
+  className = "",
+}) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [suggestions, setSuggestions] = useState<{ pokemon: Pokemon; matchType: string }[]>([]);
+  const [suggestions, setSuggestions] = useState<PokemonSearchResult[]>([]);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (value.trim()) {
-      const results = searchPokemon(value);
-      setSuggestions(results);
-      setIsOpen(results.length > 0);
-      setHighlightedIndex(-1);
-    } else {
-      setSuggestions([]);
-      setIsOpen(false);
-    }
+    const fetchSuggestions = async () => {
+      if (value.trim().length >= 2) {
+        setIsLoading(true);
+        try {
+          const results = await searchPokemonByName(value);
+          setSuggestions(results);
+        } catch (error) {
+          console.error('Error fetching suggestions:', error);
+          setSuggestions([]);
+        } finally {
+          setIsLoading(false);
+        }
+      } else {
+        setSuggestions([]);
+      }
+    };
+
+    const timeoutId = setTimeout(fetchSuggestions, 300); // Debounce
+    return () => clearTimeout(timeoutId);
   }, [value]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current && 
-        !dropdownRef.current.contains(event.target as Node) &&
-        inputRef.current &&
-        !inputRef.current.contains(event.target as Node)
-      ) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     };
@@ -108,9 +113,9 @@ export default function PokemonSearchDropdown({
     }
   };
 
-  const handleSelect = (pokemon: Pokemon) => {
+  const handleSelect = (pokemon: PokemonDetails) => {
     onSelect(pokemon);
-    onQueryChange(pokemon.name); // Update the search query to show selected Pokemon name
+    onQueryChange(pokemon.name);
     setIsOpen(false);
     setHighlightedIndex(-1);
   };
@@ -122,9 +127,8 @@ export default function PokemonSearchDropdown({
   };
 
   return (
-    <div className={`relative w-full ${className}`}>
+    <div className={`relative w-full ${className}`} ref={dropdownRef}>
       <Input
-        ref={inputRef}
         value={value}
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
@@ -134,70 +138,66 @@ export default function PokemonSearchDropdown({
         autoComplete="off"
       />
       
-      {isOpen && suggestions.length > 0 && (
-        <Card 
-          ref={dropdownRef}
-          className="absolute top-full left-0 right-0 z-50 mt-1 max-h-80 overflow-y-auto border shadow-lg bg-background"
-        >
-          <div className="p-1">
-            {suggestions.map((result, index) => {
-              const { pokemon, matchType } = result;
-              return (
+      {isOpen && (
+        <Card className="absolute top-full left-0 right-0 z-50 mt-1 max-h-60 overflow-y-auto border shadow-lg">
+          {isLoading ? (
+            <div className="p-4 text-center text-muted-foreground">
+              Searching Pokémon...
+            </div>
+          ) : suggestions.length > 0 ? (
+            <div className="p-2">
+              {suggestions.map((result, index) => (
                 <div
-                  key={pokemon.id}
+                  key={result.pokemon.id}
                   className={`flex items-center gap-3 p-3 rounded-md cursor-pointer transition-colors ${
                     index === highlightedIndex 
                       ? "bg-accent text-accent-foreground" 
                       : "hover:bg-accent hover:text-accent-foreground"
                   }`}
-                  onClick={() => handleSelect(pokemon)}
+                  onClick={() => handleSelect(result.pokemon)}
                   onMouseEnter={() => setHighlightedIndex(index)}
                 >
                   <img
-                    src={pokemon.sprite}
-                    alt={pokemon.name}
+                    src={result.pokemon.sprite}
+                    alt={result.pokemon.name}
                     className="w-10 h-10 object-contain"
                     onError={(e) => {
                       e.currentTarget.src = "/placeholder.svg";
                     }}
                   />
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium">{pokemon.name}</div>
-                    <div className="flex items-center gap-2 mt-1">
-                      <div className="flex gap-1">
-                        {pokemon.types.map((type) => (
-                          <Badge
-                            key={type}
-                            className={`${typeColors[type.toLowerCase()]} text-white text-xs`}
-                          >
-                            {type}
-                          </Badge>
-                        ))}
-                      </div>
-                      <span className="text-xs text-muted-foreground">•</span>
-                      <span className="text-xs text-muted-foreground">{pokemon.region}</span>
+                    <div className="font-medium capitalize">{result.pokemon.name}</div>
+                    <div className="flex gap-2">
+                      {result.pokemon.types.map((type) => (
+                        <Badge
+                          key={type}
+                          variant="secondary"
+                          className={`${typeColors[type as keyof typeof typeColors] || 'bg-gray-500'} text-white`}
+                        >
+                          {type}
+                        </Badge>
+                      ))}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      #{result.pokemon.id} • Match: {result.matchType}
                     </div>
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    {matchType === 'name' && 'Name match'}
-                    {matchType === 'type' && 'Type match'}
-                    {matchType === 'region' && 'Region match'}
-                  </div>
                 </div>
-              );
-            })}
-          </div>
-        </Card>
-      )}
-      
-      {value.trim() && suggestions.length === 0 && (
-        <Card className="absolute top-full left-0 right-0 z-50 mt-1 border shadow-lg bg-background">
-          <div className="p-4 text-center text-muted-foreground">
-            <div>No Pokémon found for "{value}"</div>
-            <div className="text-xs mt-1">Try searching by name, type (e.g., "Fire"), or region (e.g., "Kanto")</div>
-          </div>
+              ))}
+            </div>
+          ) : value.trim().length >= 2 ? (
+            <div className="p-4 text-center text-muted-foreground">
+              No Pokémon found
+            </div>
+          ) : (
+            <div className="p-4 text-center text-muted-foreground">
+              Type at least 2 characters to search
+            </div>
+          )}
         </Card>
       )}
     </div>
   );
-}
+};
+
+export default PokemonSearchDropdown;

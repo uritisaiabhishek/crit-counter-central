@@ -1,16 +1,10 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import React from "react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
-interface PokemonAPI {
-  id: number;
-  name: string;
-  types: { type: { name: string } }[];
-  sprite: string;
-  moves: { move: { name: string } }[];
-}
+import { PokemonDetails } from "@/services/pokeapi";
 
 interface PokemonCardProps {
-  pokemon: PokemonAPI;
+  pokemon: PokemonDetails;
   effectiveness?: "counter" | "weak";
 }
 
@@ -35,11 +29,11 @@ const typeColors: Record<string, string> = {
   fairy: "bg-pink-300"
 };
 
-export default function PokemonCard({ pokemon, effectiveness }: PokemonCardProps) {
+export const PokemonCard: React.FC<PokemonCardProps> = ({ pokemon, effectiveness }) => {
   return (
     <Card className={`hover:scale-105 transition-all duration-200 ${
-      effectiveness === "counter" ? "border-green-500 shadow-green-500/20" : 
-      effectiveness === "weak" ? "border-red-500 shadow-red-500/20" : ""
+      effectiveness === "counter" ? "border-red-500 shadow-red-500/20" : 
+      effectiveness === "weak" ? "border-green-500 shadow-green-500/20" : ""
     } shadow-lg`}>
       <CardHeader className="pb-3">
         <div className="flex items-center gap-3">
@@ -52,14 +46,15 @@ export default function PokemonCard({ pokemon, effectiveness }: PokemonCardProps
             }}
           />
           <div className="flex-1">
-            <CardTitle className="text-lg">{pokemon.name}</CardTitle>
+            <CardTitle className="text-lg capitalize">{pokemon.name}</CardTitle>
+            <p className="text-sm text-muted-foreground">#{pokemon.id}</p>
             <div className="flex gap-1 mt-1">
-              {pokemon.types.map((typeObj) => (
+              {pokemon.types.map((type) => (
                 <Badge
-                  key={typeObj.type.name}
-                  className={`${typeColors[typeObj.type.name.toLowerCase()]} text-white text-xs`}
+                  key={type}
+                  className={`${typeColors[type.toLowerCase()]} text-white text-xs`}
                 >
-                  {typeObj.type.name.charAt(0).toUpperCase() + typeObj.type.name.slice(1)}
+                  {type.charAt(0).toUpperCase() + type.slice(1)}
                 </Badge>
               ))}
             </div>
@@ -72,15 +67,24 @@ export default function PokemonCard({ pokemon, effectiveness }: PokemonCardProps
           <div>
             <h4 className="font-semibold text-sm mb-1">Sample Moves</h4>
             <div className="flex flex-wrap gap-1">
-              {pokemon.moves.slice(0, 4).map((moveObj, index) => (
+              {pokemon.moves.fast.slice(0, 4).map((move, index) => (
                 <Badge key={index} variant="outline" className="text-xs">
-                  {moveObj.move.name.charAt(0).toUpperCase() + moveObj.move.name.slice(1)}
+                  {move.charAt(0).toUpperCase() + move.slice(1)}
                 </Badge>
               ))}
+            </div>
+          </div>
+          <div>
+            <h4 className="font-semibold text-sm mb-1">Stats</h4>
+            <div className="grid grid-cols-2 gap-1 text-xs">
+              <div>HP: {pokemon.stats.hp}</div>
+              <div>ATK: {pokemon.stats.attack}</div>
+              <div>DEF: {pokemon.stats.defense}</div>
+              <div>SPD: {pokemon.stats.speed}</div>
             </div>
           </div>
         </div>
       </CardContent>
     </Card>
   );
-}
+};

@@ -1,19 +1,23 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Settings } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
 import GameSelectionModal from "@/components/GameSelectionModal";
 import TeraTypeSelector from "@/components/TeraTypeSelector";
-import PokemonCard from "@/components/PokemonCard";
 import PokemonSearchDropdown from "@/components/PokemonSearchDropdown";
-import { useToast } from "@/hooks/use-toast";
+import { PokemonCard } from "@/components/PokemonCard";
+import { 
+  PokemonDetails, 
+  fetchPokemonDetails, 
+  getCounters, 
+  getWeakTo 
+} from "@/services/pokeapi";
 
-type PokemonAPI = {
-  id: number;
-  name: string;
-  sprites: { front_default: string };
-  types: { type: { name: string } }[];
-};
+// Type definition for Pokemon API response (using PokemonDetails from service)
+interface PokemonAPI extends PokemonDetails {}
 
+// List of Pokémon games
 const pokemonGames = [
   { id: "scarlet-violet", name: "Scarlet / Violet" },
   { id: "diamond-pearl", name: "Diamond / Pearl" },
@@ -48,10 +52,11 @@ const Index = () => {
   const [selectedGame, setSelectedGame] = useState<string | null>(null);
   const [showGameModal, setShowGameModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedPokemon, setSelectedPokemon] = useState<any | null>(null);
+  const [selectedPokemon, setSelectedPokemon] = useState<PokemonDetails | null>(null);
   const [selectedTeraType, setSelectedTeraType] = useState<string | null>(null);
-  const [counters, setCounters] = useState<any[]>([]);
-  const [weakTo, setWeakTo] = useState<any[]>([]);
+  const [counters, setCounters] = useState<PokemonDetails[]>([]);
+  const [weakTo, setWeakTo] = useState<PokemonDetails[]>([]);
+  const [isLoadingBattle, setIsLoadingBattle] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -63,67 +68,36 @@ const Index = () => {
     }
   }, []);
 
-  // Fetch Pokémon data from PokéAPI
-  const fetchPokemon = async (name: string) => {
+  // Remove the old fetchPokemon function as we're using the service now
+
+  const updateBattleData = async (pokemon: PokemonDetails, teraType?: string | null) => {
+    if (!pokemon) return;
+
+    setIsLoadingBattle(true);
     try {
-      const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${name.toLowerCase()}`);
-      if (!res.ok) throw new Error("Pokémon not found");
-      const data: PokemonAPI = await res.json();
-      return {
-        id: data.id,
-        name: data.name.charAt(0).toUpperCase() + data.name.slice(1),
-        sprite: data.sprites.front_default,
-        types: data.types.map(t => t.type.name.charAt(0).toUpperCase() + t.type.name.slice(1)),
-      };
-    } catch {
-      return null;
+      const [counterPokemon, weakToPokemon] = await Promise.all([
+        getCounters(pokemon, teraType || undefined),
+        getWeakTo(pokemon, teraType || undefined)
+      ]);
+      
+      setCounters(counterPokemon);
+      setWeakTo(weakToPokemon);
+    } catch (error) {
+      console.error('Error updating battle data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load battle data. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingBattle(false);
     }
   };
 
-  // Fetch type effectiveness from PokéAPI
-  const fetchTypeEffectiveness = async (types: string[]) => {
-    // Get all type relations
-    const promises = types.map(type =>
-      fetch(`https://pokeapi.co/api/v2/type/${type.toLowerCase()}`).then(res => res.json())
-    );
-    const typeData = await Promise.all(promises);
-
-    // Aggregate damage relations
-    const doubleDamageFrom = new Set<string>();
-    const doubleDamageTo = new Set<string>();
-    typeData.forEach(td => {
-      td.damage_relations.double_damage_from.forEach((t: any) => doubleDamageFrom.add(t.name));
-      td.damage_relations.double_damage_to.forEach((t: any) => doubleDamageTo.add(t.name));
-    });
-
-    return { doubleDamageFrom, doubleDamageTo };
-  };
-
   useEffect(() => {
-    const getMatchups = async () => {
-      if (!selectedPokemon) return;
-      const types = selectedTeraType ? [selectedTeraType] : selectedPokemon.types;
-      const { doubleDamageFrom, doubleDamageTo } = await fetchTypeEffectiveness(types);
-
-      // For demo: get first 20 Pokémon and filter by type
-      const res = await fetch("https://pokeapi.co/api/v2/pokemon?limit=20");
-      const list = await res.json();
-      const pokemons: any[] = await Promise.all(
-        list.results.map((p: any) => fetchPokemon(p.name))
-      );
-
-      setCounters(
-        pokemons.filter(p =>
-          p?.types.some((t: string) => doubleDamageFrom.has(t.toLowerCase()))
-        )
-      );
-      setWeakTo(
-        pokemons.filter(p =>
-          p?.types.some((t: string) => doubleDamageTo.has(t.toLowerCase()))
-        )
-      );
-    };
-    getMatchups();
+    if (selectedPokemon) {
+      updateBattleData(selectedPokemon, selectedTeraType);
+    }
   }, [selectedPokemon, selectedTeraType]);
 
   const handleGameSelect = (game: string) => {
@@ -144,9 +118,8 @@ const Index = () => {
     setSelectedTeraType(null);
   };
 
-  const handlePokemonSelect = async (pokemon: { name: string }) => {
-    const poke = await fetchPokemon(pokemon.name);
-    setSelectedPokemon(poke);
+  const handlePokemonSelect = async (pokemon: PokemonDetails) => {
+    setSelectedPokemon(pokemon);
     setSelectedTeraType(null);
     setSearchQuery(pokemon.name); // Update search query to show selected Pokemon name
   };
@@ -189,7 +162,6 @@ const Index = () => {
             onClick={handleGameChange}
             className="gap-2"
           >
-            <Settings className="w-4 h-4" />
             Change Game
           </Button>
         </div>
@@ -236,12 +208,13 @@ const Index = () => {
                     className="w-24 h-24 object-contain"
                   />
                   <div>
-                    <h2 className="text-3xl font-bold">{selectedPokemon.name}</h2>
+                    <h2 className="text-3xl font-bold capitalize">{selectedPokemon.name}</h2>
+                    <p className="text-muted-foreground">#{selectedPokemon.id}</p>
                     <div className="flex gap-2 mt-2">
                       {selectedPokemon.types.map((type: string) => (
                         <span
                           key={type}
-                          className="px-3 py-1 bg-primary text-primary-foreground rounded-full text-sm font-medium"
+                          className="px-3 py-1 bg-primary text-primary-foreground rounded-full text-sm font-medium capitalize"
                         >
                           {type}
                         </span>
@@ -261,54 +234,70 @@ const Index = () => {
             </div>
 
             {/* Battle Results */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Counters */}
-              <div className="space-y-4">
-                <h3 className="text-2xl font-bold text-center text-green-600 dark:text-green-400">
-                  Best Counters
-                  <span className="block text-sm font-normal text-muted-foreground">
-                    Pokémon that beat {selectedPokemon.name}
-                  </span>
-                </h3>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-4">
-                  {counters.length > 0 ? counters.map((pokemon) => (
-                    <PokemonCard
-                      key={pokemon.id}
-                      pokemon={pokemon}
-                      effectiveness="counter"
-                    />
-                  )) : (
-                    <p className="text-center text-muted-foreground py-8">
-                      No strong counters found
-                    </p>
+            <div className="grid md:grid-cols-2 gap-8">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-red-600">
+                    Counters (Strong Against {selectedPokemon.name})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {isLoadingBattle ? (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground">Loading battle data...</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {counters.map((pokemon) => (
+                          <PokemonCard
+                            key={pokemon.id}
+                            pokemon={pokemon}
+                            effectiveness="counter"
+                          />
+                        ))}
+                      </div>
+                      {counters.length === 0 && (
+                        <p className="text-muted-foreground text-center py-8">
+                          No counters found for this Pokémon.
+                        </p>
+                      )}
+                    </>
                   )}
-                </div>
-              </div>
+                </CardContent>
+              </Card>
 
-              {/* Weak Against */}
-              <div className="space-y-4">
-                <h3 className="text-2xl font-bold text-center text-red-600 dark:text-red-400">
-                  Strong Against
-                  <span className="block text-sm font-normal text-muted-foreground">
-                    Pokémon that {selectedPokemon.name} beats
-                  </span>
-                </h3>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-4">
-                  {weakTo.length > 0 ? weakTo.map((pokemon) => (
-                    <PokemonCard
-                      key={pokemon.id}
-                      pokemon={pokemon}
-                      effectiveness="weak"
-                    />
-                  )) : (
-                    <p className="text-center text-muted-foreground py-8">
-                      No advantageous matchups found
-                    </p>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-green-600">
+                    {selectedPokemon.name} is Strong Against
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {isLoadingBattle ? (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground">Loading battle data...</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {weakTo.map((pokemon) => (
+                          <PokemonCard
+                            key={pokemon.id}
+                            pokemon={pokemon}
+                            effectiveness="weak"
+                          />
+                        ))}
+                      </div>
+                      {weakTo.length === 0 && (
+                        <p className="text-muted-foreground text-center py-8">
+                          This Pokémon is not particularly strong against any types.
+                        </p>
+                      )}
+                    </>
                   )}
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         )}
