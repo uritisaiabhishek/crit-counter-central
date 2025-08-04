@@ -48,10 +48,10 @@ const Index = () => {
   const [selectedGame, setSelectedGame] = useState<string | null>(null);
   const [showGameModal, setShowGameModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedPokemon, setSelectedPokemon] = useState<PokemonAPI | null>(null);
+  const [selectedPokemon, setSelectedPokemon] = useState<any | null>(null);
   const [selectedTeraType, setSelectedTeraType] = useState<string | null>(null);
-  const [counters, setCounters] = useState<PokemonAPI[]>([]);
-  const [weakTo, setWeakTo] = useState<PokemonAPI[]>([]);
+  const [counters, setCounters] = useState<any[]>([]);
+  const [weakTo, setWeakTo] = useState<any[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -108,18 +108,18 @@ const Index = () => {
       // For demo: get first 20 Pokémon and filter by type
       const res = await fetch("https://pokeapi.co/api/v2/pokemon?limit=20");
       const list = await res.json();
-      const pokemons: PokemonAPI[] = await Promise.all(
+      const pokemons: any[] = await Promise.all(
         list.results.map((p: any) => fetchPokemon(p.name))
       );
 
       setCounters(
         pokemons.filter(p =>
-          p?.types.some(t => doubleDamageFrom.has(t.toLowerCase()))
+          p?.types.some((t: string) => doubleDamageFrom.has(t.toLowerCase()))
         )
       );
       setWeakTo(
         pokemons.filter(p =>
-          p?.types.some(t => doubleDamageTo.has(t.toLowerCase()))
+          p?.types.some((t: string) => doubleDamageTo.has(t.toLowerCase()))
         )
       );
     };
@@ -148,6 +148,7 @@ const Index = () => {
     const poke = await fetchPokemon(pokemon.name);
     setSelectedPokemon(poke);
     setSelectedTeraType(null);
+    setSearchQuery(pokemon.name); // Update search query to show selected Pokemon name
   };
 
   const handleSearchQueryChange = (query: string) => {
@@ -237,7 +238,7 @@ const Index = () => {
                   <div>
                     <h2 className="text-3xl font-bold">{selectedPokemon.name}</h2>
                     <div className="flex gap-2 mt-2">
-                      {selectedPokemon.types.map((type) => (
+                      {selectedPokemon.types.map((type: string) => (
                         <span
                           key={type}
                           className="px-3 py-1 bg-primary text-primary-foreground rounded-full text-sm font-medium"
