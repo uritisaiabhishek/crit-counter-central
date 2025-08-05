@@ -40,38 +40,83 @@ const cache = new Map<string, any>();
 
 // Filter Pokemon based on game availability
 const filterPokemonByGame = (pokemonList: any[], gameId: string): any[] => {
-  // For now, return all Pokemon - could be enhanced with generation data
-  switch (gameId) {
-    case 'red-blue':
-      return pokemonList.filter((p: any) => p.pokemon.url.includes('/pokemon/') && 
-        parseInt(p.pokemon.url.split('/')[6]) <= 151);
-    case 'gold-silver':
-      return pokemonList.filter((p: any) => p.pokemon.url.includes('/pokemon/') && 
-        parseInt(p.pokemon.url.split('/')[6]) <= 251);
-    case 'ruby-sapphire':
-      return pokemonList.filter((p: any) => p.pokemon.url.includes('/pokemon/') && 
-        parseInt(p.pokemon.url.split('/')[6]) <= 386);
-    case 'diamond-pearl':
-      return pokemonList.filter((p: any) => p.pokemon.url.includes('/pokemon/') && 
-        parseInt(p.pokemon.url.split('/')[6]) <= 493);
-    case 'black-white':
-      return pokemonList.filter((p: any) => p.pokemon.url.includes('/pokemon/') && 
-        parseInt(p.pokemon.url.split('/')[6]) <= 649);
-    case 'x-y':
-      return pokemonList.filter((p: any) => p.pokemon.url.includes('/pokemon/') && 
-        parseInt(p.pokemon.url.split('/')[6]) <= 721);
-    case 'sun-moon':
-      return pokemonList.filter((p: any) => p.pokemon.url.includes('/pokemon/') && 
-        parseInt(p.pokemon.url.split('/')[6]) <= 807);
-    case 'sword-shield':
-      return pokemonList.filter((p: any) => p.pokemon.url.includes('/pokemon/') && 
-        parseInt(p.pokemon.url.split('/')[6]) <= 898);
-    case 'scarlet-violet':
-      return pokemonList.filter((p: any) => p.pokemon.url.includes('/pokemon/') && 
-        parseInt(p.pokemon.url.split('/')[6]) <= 1010);
-    default:
-      return pokemonList;
+  // Map games to their generation limits
+  const getGenerationLimit = (gameId: string): number | null => {
+    switch (gameId) {
+      // Gen 1 games
+      case 'red-blue':
+      case 'yellow':
+        return 151;
+      
+      // Gen 2 games
+      case 'gold-silver':
+      case 'crystal':
+        return 251;
+      
+      // Gen 3 games
+      case 'ruby-sapphire':
+      case 'emerald':
+      case 'firered-leafgreen':
+        return 386;
+      
+      // Gen 4 games
+      case 'diamond-pearl':
+      case 'platinum':
+        return 493;
+      
+      // Gen 5 games
+      case 'black-white':
+      case 'black2-white2':
+        return 649;
+      
+      // Gen 6 games
+      case 'x-y':
+      case 'omega-ruby-alpha-sapphire':
+        return 721;
+      
+      // Gen 7 games
+      case 'sun-moon':
+      case 'ultra-sun-ultra-moon':
+      case 'lets-go':
+        return 807;
+      
+      // Gen 8 games
+      case 'sword-shield':
+        return 898;
+      
+      // Gen 9 games
+      case 'scarlet-violet':
+        return 1010;
+      
+      // Special games - include all Pokemon
+      case 'pokemon-go':
+      case 'legends-arceus':
+      case 'colosseum':
+      case 'xd-gale-of-darkness':
+      case 'snap':
+      case 'stadium':
+      case 'mystery-dungeon':
+      case 'ranger':
+      case 'conquest':
+      case 'battle-revolution':
+        return null; // No limit for special games
+      
+      default:
+        return null; // No filtering for unknown games
+    }
+  };
+
+  const limit = getGenerationLimit(gameId);
+  
+  if (limit === null) {
+    return pokemonList; // Return all Pokemon for special games or unknown games
   }
+  
+  return pokemonList.filter((p: any) => {
+    if (!p.pokemon.url.includes('/pokemon/')) return false;
+    const pokemonId = parseInt(p.pokemon.url.split('/')[6]);
+    return pokemonId <= limit && pokemonId > 0;
+  });
 };
 
 // Calculate battle ranking based on stats and type effectiveness
