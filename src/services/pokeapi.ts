@@ -170,11 +170,11 @@ export const fetchPokemonDetails = async (nameOrId: string): Promise<PokemonDeta
   }
 };
 
-export const searchPokemonByName = async (query: string): Promise<PokemonSearchResult[]> => {
+export const searchPokemonByName = async (query: string, gameId?: string): Promise<PokemonSearchResult[]> => {
   if (!query || query.length < 2) return [];
   
   try {
-    const cacheKey = `search-${query.toLowerCase()}`;
+    const cacheKey = `search-${query.toLowerCase()}-${gameId || 'all'}`;
     if (cache.has(cacheKey)) {
       return cache.get(cacheKey);
     }
@@ -183,8 +183,15 @@ export const searchPokemonByName = async (query: string): Promise<PokemonSearchR
     const response = await fetch(`${POKEAPI_BASE_URL}/pokemon?limit=1000`);
     const data = await response.json();
     
-    // Filter by name
-    const matchingNames = data.results.filter((p: any) => 
+    // Filter by game first if gameId is provided
+    let filteredResults = data.results;
+    if (gameId) {
+      filteredResults = filterPokemonByGame(data.results.map((p: any) => ({ pokemon: p })), gameId)
+        .map((item: any) => item.pokemon);
+    }
+    
+    // Then filter by name
+    const matchingNames = filteredResults.filter((p: any) => 
       p.name.toLowerCase().includes(query.toLowerCase())
     ).slice(0, 10); // Limit to 10 results
     

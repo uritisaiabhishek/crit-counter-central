@@ -10,6 +10,7 @@ interface PokemonSearchDropdownProps {
   onQueryChange: (query: string) => void;
   placeholder?: string;
   className?: string;
+  gameId?: string;
 }
 
 const typeColors: Record<string, string> = {
@@ -39,6 +40,7 @@ const PokemonSearchDropdown: React.FC<PokemonSearchDropdownProps> = ({
   onQueryChange,
   placeholder = "Search for a Pokémon...",
   className = "",
+  gameId,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [suggestions, setSuggestions] = useState<PokemonSearchResult[]>([]);
@@ -51,7 +53,7 @@ const PokemonSearchDropdown: React.FC<PokemonSearchDropdownProps> = ({
       if (value.trim().length >= 2) {
         setIsLoading(true);
         try {
-          const results = await searchPokemonByName(value);
+          const results = await searchPokemonByName(value, gameId);
           setSuggestions(results);
         } catch (error) {
           console.error('Error fetching suggestions:', error);
@@ -66,7 +68,7 @@ const PokemonSearchDropdown: React.FC<PokemonSearchDropdownProps> = ({
 
     const timeoutId = setTimeout(fetchSuggestions, 300); // Debounce
     return () => clearTimeout(timeoutId);
-  }, [value]);
+  }, [value, gameId]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

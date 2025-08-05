@@ -185,6 +185,7 @@ const Index = () => {
                 onQueryChange={handleSearchQueryChange}
                 placeholder="Search for a Pokémon..."
                 className="text-lg py-6"
+                gameId={selectedGame || undefined}
               />
             </div>
           </div>
@@ -199,6 +200,7 @@ const Index = () => {
                   onQueryChange={handleSearchQueryChange}
                   placeholder="Search for a Pokémon..."
                   className="max-w-lg"
+                  gameId={selectedGame || undefined}
                 />
                 
                 <div className="flex items-center gap-4">
