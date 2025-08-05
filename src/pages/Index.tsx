@@ -76,7 +76,7 @@ const Index = () => {
     setIsLoadingBattle(true);
     try {
       const [counterPokemon, weakToPokemon] = await Promise.all([
-        getCounters(pokemon, teraType || undefined),
+        getCounters(pokemon, teraType || undefined, selectedGame || undefined),
         getWeakTo(pokemon, teraType || undefined)
       ]);
       

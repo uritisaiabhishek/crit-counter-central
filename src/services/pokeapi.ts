@@ -16,6 +16,7 @@ export interface PokemonDetails {
     specialDefense: number;
     speed: number;
   };
+  battleRanking?: number;
 }
 
 export interface PokemonSearchResult {
@@ -36,6 +37,98 @@ const POKEAPI_BASE_URL = 'https://pokeapi.co/api/v2';
 
 // Cache for API responses
 const cache = new Map<string, any>();
+
+// Filter Pokemon based on game availability
+const filterPokemonByGame = (pokemonList: any[], gameId: string): any[] => {
+  // For now, return all Pokemon - could be enhanced with generation data
+  switch (gameId) {
+    case 'red-blue':
+      return pokemonList.filter((p: any) => p.pokemon.url.includes('/pokemon/') && 
+        parseInt(p.pokemon.url.split('/')[6]) <= 151);
+    case 'gold-silver':
+      return pokemonList.filter((p: any) => p.pokemon.url.includes('/pokemon/') && 
+        parseInt(p.pokemon.url.split('/')[6]) <= 251);
+    case 'ruby-sapphire':
+      return pokemonList.filter((p: any) => p.pokemon.url.includes('/pokemon/') && 
+        parseInt(p.pokemon.url.split('/')[6]) <= 386);
+    case 'diamond-pearl':
+      return pokemonList.filter((p: any) => p.pokemon.url.includes('/pokemon/') && 
+        parseInt(p.pokemon.url.split('/')[6]) <= 493);
+    case 'black-white':
+      return pokemonList.filter((p: any) => p.pokemon.url.includes('/pokemon/') && 
+        parseInt(p.pokemon.url.split('/')[6]) <= 649);
+    case 'x-y':
+      return pokemonList.filter((p: any) => p.pokemon.url.includes('/pokemon/') && 
+        parseInt(p.pokemon.url.split('/')[6]) <= 721);
+    case 'sun-moon':
+      return pokemonList.filter((p: any) => p.pokemon.url.includes('/pokemon/') && 
+        parseInt(p.pokemon.url.split('/')[6]) <= 807);
+    case 'sword-shield':
+      return pokemonList.filter((p: any) => p.pokemon.url.includes('/pokemon/') && 
+        parseInt(p.pokemon.url.split('/')[6]) <= 898);
+    case 'scarlet-violet':
+      return pokemonList.filter((p: any) => p.pokemon.url.includes('/pokemon/') && 
+        parseInt(p.pokemon.url.split('/')[6]) <= 1010);
+    default:
+      return pokemonList;
+  }
+};
+
+// Calculate battle ranking based on stats and type effectiveness
+const calculateBattleRanking = (attacker: PokemonDetails, defender: PokemonDetails, gameId?: string): number => {
+  let ranking = 0;
+  
+  // Base stat total
+  const baseStatTotal = Object.values(attacker.stats).reduce((sum, stat) => sum + stat, 0);
+  ranking += baseStatTotal / 10;
+  
+  // Type effectiveness bonus
+  const attackerTypes = attacker.types;
+  const defenderTypes = defender.types;
+  
+  // Simple type effectiveness calculation (2x damage = +50 points)
+  for (const attackType of attackerTypes) {
+    for (const defenseType of defenderTypes) {
+      // This is simplified - in reality we'd need full type chart
+      if (isTypeEffective(attackType, defenseType)) {
+        ranking += 50;
+      }
+    }
+  }
+  
+  // Game-specific bonuses
+  if (gameId === 'pokemon-go') {
+    // CP-like calculation for Pokemon GO
+    ranking = Math.sqrt(attacker.stats.attack) * Math.sqrt(attacker.stats.defense) * Math.sqrt(attacker.stats.hp);
+  }
+  
+  return ranking;
+};
+
+// Simplified type effectiveness check
+const isTypeEffective = (attackType: string, defenseType: string): boolean => {
+  const effectiveness: Record<string, string[]> = {
+    fire: ['grass', 'ice', 'bug', 'steel'],
+    water: ['fire', 'ground', 'rock'],
+    grass: ['water', 'ground', 'rock'],
+    electric: ['water', 'flying'],
+    psychic: ['fighting', 'poison'],
+    ice: ['grass', 'ground', 'flying', 'dragon'],
+    dragon: ['dragon'],
+    dark: ['psychic', 'ghost'],
+    fighting: ['normal', 'ice', 'rock', 'dark', 'steel'],
+    poison: ['grass', 'fairy'],
+    ground: ['fire', 'electric', 'poison', 'rock', 'steel'],
+    flying: ['grass', 'fighting', 'bug'],
+    bug: ['grass', 'psychic', 'dark'],
+    rock: ['fire', 'ice', 'flying', 'bug'],
+    ghost: ['psychic', 'ghost'],
+    steel: ['ice', 'rock', 'fairy'],
+    fairy: ['fighting', 'dragon', 'dark']
+  };
+  
+  return effectiveness[attackType]?.includes(defenseType) || false;
+};
 
 export const fetchPokemonDetails = async (nameOrId: string): Promise<PokemonDetails | null> => {
   try {
@@ -144,7 +237,7 @@ export const fetchTypeEffectiveness = async (typeName: string): Promise<TypeEffe
   }
 };
 
-export const getCounters = async (pokemon: PokemonDetails, teraType?: string): Promise<PokemonDetails[]> => {
+export const getCounters = async (pokemon: PokemonDetails, teraType?: string, gameId?: string): Promise<PokemonDetails[]> => {
   const types = teraType ? [teraType] : pokemon.types;
   const counters: PokemonDetails[] = [];
   
@@ -158,15 +251,27 @@ export const getCounters = async (pokemon: PokemonDetails, teraType?: string): P
           const typeResponse = await fetch(`${POKEAPI_BASE_URL}/type/${strongType}`);
           const typeData = await typeResponse.json();
           
-          for (const pokemonData of typeData.pokemon.slice(0, 5)) {
+          // Filter Pokemon based on game mechanics
+          let pokemonList = typeData.pokemon;
+          if (gameId) {
+            pokemonList = filterPokemonByGame(pokemonList, gameId);
+          }
+          
+          for (const pokemonData of pokemonList.slice(0, 8)) {
             const details = await fetchPokemonDetails(pokemonData.pokemon.name);
             if (details && !counters.find(c => c.id === details.id)) {
-              counters.push(details);
+              // Add battle ranking based on stats and type advantage
+              const battleRanking = calculateBattleRanking(details, pokemon, gameId);
+              counters.push({ ...details, battleRanking });
             }
           }
         }
       }
     }
+    
+    // Sort by battle ranking for better counter suggestions
+    counters.sort((a, b) => (b.battleRanking || 0) - (a.battleRanking || 0));
+    
   } catch (error) {
     console.error('Error getting counters:', error);
   }
